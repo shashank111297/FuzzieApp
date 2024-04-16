@@ -2,22 +2,59 @@ import ProfileForm from "@/components/forms/profile-form";
 import React from "react";
 import ProfilePicture from "./_components/profile-picture";
 import { db } from "@/lib/db";
+import { currentUser } from "@clerk/nextjs";
 
 type Props = {};
 
-const Settings = (props: Props) => {
-  // const removeProfileImage = async () => {
-  //   "use server";
-  //   const response = await db.user.update({
-  //     where: {
-  //       clerkId: authUser.id,
-  //     },
-  //     data: {
-  //       profileImage: "",
-  //     },
-  //   });
-  //   return response;
-  // };
+const Settings = async (props: Props) => {
+  const authUser = await currentUser();
+  let authUserId = "";
+  if (!authUser) return null;
+
+  authUserId = authUser.id;
+  const user = await db.user.findUnique({ where: { clerkId: authUser.id } });
+
+  const removeProfileImage = async () => {
+    "use server";
+    const response = await db.user.update({
+      where: {
+        clerkId: authUserId,
+      },
+      data: {
+        profileImage: "",
+      },
+    });
+    return response;
+  };
+
+  const uploadProfileImage = async (image: string) => {
+    "use server";
+    const id = authUserId;
+    const response = await db.user.update({
+      where: {
+        clerkId: id,
+      },
+      data: {
+        profileImage: image,
+      },
+    });
+
+    return response;
+  };
+
+  const updateUserInfo = async (name: string) => {
+    "use server";
+
+    const updateUser = await db.user.update({
+      where: {
+        clerkId: authUserId,
+      },
+      data: {
+        name,
+      },
+    });
+    return updateUser;
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -31,12 +68,12 @@ const Settings = (props: Props) => {
             Add or update your information
           </p>
         </div>
-        {/* <ProfilePicture
+        <ProfilePicture
           onDelete={removeProfileImage}
-          userImage={user?.profileImage}
+          userImage={user?.profileImage || ""}
           onUpload={uploadProfileImage}
-        ></ProfilePicture> */}
-        <ProfileForm />
+        />
+        <ProfileForm user={user} onUpdate={updateUserInfo} />
       </div>
     </div>
   );
